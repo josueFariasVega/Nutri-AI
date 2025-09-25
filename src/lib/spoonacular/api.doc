@@ -1,0 +1,19 @@
+import { spoonacularService } from '../lib/spoonacular';
+
+// Buscar recetas
+await spoonacularService.searchRecipes({
+  query: 'pasta',
+  number: 12
+});
+
+// Obtener detalles de una receta
+await spoonacularService.getRecipeInformation(recipeId);
+
+// Obtener información nutricional
+await spoonacularService.getRecipeNutrition(recipeId);
+
+// Buscar por tipo de comida
+await spoonacularService.getRecipesByMealType('breakfast', 'vegetarian');
+
+// Generar sugerencias de comidas
+await spoonacularService.generateMealSuggestions('lunch', preferences, 500);

@@ -650,7 +650,7 @@ export function DashboardOverview({ user, activeSubsection = 'dashboard' }: Dash
             return (
               <div key={meal.id} className="p-4 rounded-lg border border-gray-100">
                 {/* Meal Header */}
-                <div className="flex items-center justify-between mb-3">
+                <div className="flex-col md:flex-row items-center justify-between mb-3">
                   <div className="flex items-center space-x-3">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                       meal.completed ? 'bg-green-500/20' : 'bg-gray-100'
@@ -672,7 +672,7 @@ export function DashboardOverview({ user, activeSubsection = 'dashboard' }: Dash
                     </div>
                   </div>
                   
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2 mt-3">
                     {meal.completed && (
                       <Badge className="bg-green-100 text-green-700 text-xs">
                         ✓ {meal.items.filter(item => item.consumed).length} seleccionado(s)

@@ -145,18 +145,23 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl w-[90vw] h-[85vh] p-0 gap-0 overflow-hidden">
-        <DialogHeader className="px-4 py-3 border-b bg-white flex-shrink-0">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 pr-4">
-              <DialogTitle className="text-lg font-bold text-gray-900 line-clamp-1">
+      <DialogContent className="w-[95vw] h-[95vh] sm:w-[90vw] sm:h-[90vh] md:max-w-4xl md:h-[85vh] p-0 gap-0 overflow-hidden">
+        <DialogHeader className="px-3 py-4 sm:px-4 border-b bg-white flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="flex-1 pr-4 min-w-0">
+              <DialogTitle className="text-base sm:text-lg font-bold text-gray-900 line-clamp-2 sm:line-clamp-1">
                 {recipe.title}
               </DialogTitle>
-              <DialogDescription className="text-xs text-gray-600 mt-1">
+              <DialogDescription className="text-xs text-gray-600 mt-1 line-clamp-2 sm:line-clamp-1">
                 Información completa de la receta con ingredientes, instrucciones y datos nutricionales
               </DialogDescription>
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose} className="flex-shrink-0">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClose} 
+              className="flex-shrink-0 h-8 w-8 p-0 sm:h-auto sm:w-auto sm:p-2"
+            >
               <X className="w-4 h-4" />
             </Button>
           </div>
@@ -164,17 +169,18 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
         <div className="flex-1 overflow-hidden">
           {loading ? (
-            <div className="flex items-center justify-center h-full">
+            <div className="flex flex-col items-center justify-center h-full space-y-3">
               <Loader2 className="w-8 h-8 animate-spin text-green-600" />
-              <span className="ml-2">Cargando detalles...</span>
+              <span className="text-sm text-gray-600">Cargando detalles...</span>
             </div>
           ) : (
-            <div className="h-full overflow-y-auto px-4 py-4">
-              <div className="space-y-4">
-                {/* Header compacto con imagen y stats */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                  <div className="lg:col-span-1">
-                    <div className="aspect-square relative rounded-lg overflow-hidden">
+            <div className="h-full overflow-y-auto">
+              <div className="p-3 sm:p-4 space-y-4">
+                {/* Header con imagen y stats - Mejorado para móvil */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Imagen - Responsive */}
+                  <div className="md:col-span-1">
+                    <div className="aspect-[4/3] sm:aspect-square relative rounded-lg overflow-hidden shadow-md">
                       <img
                         src={recipe.image}
                         alt={recipe.title}
@@ -193,85 +199,105 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                     </div>
                   </div>
 
-                  <div className="lg:col-span-2 space-y-3">
-                    {/* Stats principales en grid compacto */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                      <div className="text-center p-2 bg-blue-50 rounded-lg">
-                        <Clock className="w-4 h-4 text-blue-600 mx-auto mb-1" />
-                        <p className="text-xs text-blue-600">Tiempo</p>
-                        <p className="font-semibold text-sm">{recipe.readyInMinutes} min</p>
+                  {/* Stats y badges - Mejorado layout */}
+                  <div className="md:col-span-1 lg:col-span-2 space-y-4">
+                    {/* Stats principales - Grid responsivo */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-100">
+                        <Clock className="w-5 h-5 text-blue-600 mx-auto mb-1" />
+                        <p className="text-xs text-blue-600 font-medium">Tiempo</p>
+                        <p className="font-bold text-sm text-blue-800">{recipe.readyInMinutes} min</p>
                       </div>
                       
-                      <div className="text-center p-2 bg-green-50 rounded-lg">
-                        <Users className="w-4 h-4 text-green-600 mx-auto mb-1" />
-                        <p className="text-xs text-green-600">Porciones</p>
-                        <p className="font-semibold text-sm">{recipe.servings}</p>
+                      <div className="text-center p-3 bg-green-50 rounded-lg border border-green-100">
+                        <Users className="w-5 h-5 text-green-600 mx-auto mb-1" />
+                        <p className="text-xs text-green-600 font-medium">Porciones</p>
+                        <p className="font-bold text-sm text-green-800">{recipe.servings}</p>
                       </div>
                       
-                      <div className="text-center p-2 bg-orange-50 rounded-lg">
-                        <Zap className="w-4 h-4 text-orange-600 mx-auto mb-1" />
-                        <p className="text-xs text-orange-600">Calorías</p>
-                        <p className="font-semibold text-sm">{getRecipeCalories(recipeDetails || recipe)} kcal</p>
+                      <div className="text-center p-3 bg-orange-50 rounded-lg border border-orange-100">
+                        <Zap className="w-5 h-5 text-orange-600 mx-auto mb-1" />
+                        <p className="text-xs text-orange-600 font-medium">Calorías</p>
+                        <p className="font-bold text-sm text-orange-800">{getRecipeCalories(recipeDetails || recipe)}</p>
                       </div>
                       
                       {difficulty && (
-                        <div className={`text-center p-2 rounded-lg ${difficulty.bgColor}`}>
-                          <ChefHat className={`w-4 h-4 mx-auto mb-1 ${difficulty.color}`} />
-                          <p className={`text-xs ${difficulty.color}`}>Dificultad</p>
-                          <p className="font-semibold text-sm">{difficulty.level}</p>
+                        <div className={`text-center p-3 rounded-lg border ${difficulty.bgColor} ${difficulty.bgColor.replace('bg-', 'border-')}`}>
+                          <ChefHat className={`w-5 h-5 mx-auto mb-1 ${difficulty.color}`} />
+                          <p className={`text-xs font-medium ${difficulty.color}`}>Dificultad</p>
+                          <p className={`font-bold text-sm ${difficulty.color.replace('text-', 'text-').replace('600', '800')}`}>
+                            {difficulty.level}
+                          </p>
                         </div>
                       )}
                     </div>
 
-                    {/* Health Score */}
+                    {/* Health Score - Solo si está disponible */}
                     {recipe.healthScore && (
-                      <div className="text-center p-2 bg-purple-50 rounded-lg">
-                        <Heart className="w-4 h-4 text-purple-600 mx-auto mb-1" />
-                        <p className="text-xs text-purple-600">Health Score</p>
-                        <p className="font-semibold text-sm">{recipe.healthScore}/100</p>
+                      <div className="text-center p-3 bg-purple-50 rounded-lg border border-purple-100 max-w-xs mx-auto sm:max-w-none">
+                        <div className="flex items-center justify-center space-x-2">
+                          <Heart className="w-4 h-4 text-purple-600" />
+                          <span className="text-xs text-purple-600 font-medium">Health Score:</span>
+                          <span className="font-bold text-sm text-purple-800">{recipe.healthScore}/100</span>
+                        </div>
                       </div>
                     )}
 
-                    {/* Badges de dieta */}
-                    <div className="flex flex-wrap gap-1">
-                      {recipe.vegetarian && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">Vegetariano</Badge>
-                      )}
-                      {recipe.vegan && (
-                        <Badge className="bg-green-100 text-green-800 text-xs">Vegano</Badge>
-                      )}
-                      {recipe.glutenFree && (
-                        <Badge className="bg-blue-100 text-blue-800 text-xs">Sin Gluten</Badge>
-                      )}
-                      {recipe.dairyFree && (
-                        <Badge className="bg-yellow-100 text-yellow-800 text-xs">Sin Lácteos</Badge>
-                      )}
-                      {recipe.diets?.slice(0, 3).map((diet, index) => (
-                        <Badge key={index} variant="outline" className="text-xs">
-                          {diet}
-                        </Badge>
-                      ))}
+                    {/* Badges de dieta - Mejorado */}
+                    <div className="space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700">Características dietéticas:</h4>
+                      <div className="flex flex-wrap gap-2">
+                        {recipe.vegetarian && (
+                          <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1">🌱 Vegetariano</Badge>
+                        )}
+                        {recipe.vegan && (
+                          <Badge className="bg-green-100 text-green-800 text-xs px-2 py-1">🌿 Vegano</Badge>
+                        )}
+                        {recipe.glutenFree && (
+                          <Badge className="bg-blue-100 text-blue-800 text-xs px-2 py-1">Sin Gluten</Badge>
+                        )}
+                        {recipe.dairyFree && (
+                          <Badge className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1">Sin Lácteos</Badge>
+                        )}
+                        {recipe.diets?.slice(0, 3).map((diet, index) => (
+                          <Badge key={index} variant="outline" className="text-xs px-2 py-1">
+                            {diet}
+                          </Badge>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
 
-                {/* Tabs con contenido detallado */}
+                {/* Tabs con contenido detallado - Mejorado */}
                 <Tabs defaultValue="overview" className="w-full">
-                  <TabsList className="grid w-full grid-cols-4 mb-3">
-                    <TabsTrigger value="overview" className="text-xs">Resumen</TabsTrigger>
-                    <TabsTrigger value="ingredients" className="text-xs">Ingredientes</TabsTrigger>
-                    <TabsTrigger value="instructions" className="text-xs">Instrucciones</TabsTrigger>
-                    <TabsTrigger value="nutrition" className="text-xs">Nutrición</TabsTrigger>
+                  <TabsList className="grid grid-cols-2 sm:grid-cols-4 w-full mb-4">
+                    <TabsTrigger value="overview" className="text-xs sm:text-sm px-2">
+                      <span className="hidden sm:inline">Resumen</span>
+                      <span className="sm:hidden">Info</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="ingredients" className="text-xs sm:text-sm px-2">
+                      <span className="hidden sm:inline">Ingredientes</span>
+                      <span className="sm:hidden">Ingr.</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="instructions" className="text-xs sm:text-sm px-2">
+                      <span className="hidden sm:inline">Instrucciones</span>
+                      <span className="sm:hidden">Pasos</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="nutrition" className="text-xs sm:text-sm px-2">
+                      <span className="hidden sm:inline">Nutrición</span>
+                      <span className="sm:hidden">Nutr.</span>
+                    </TabsTrigger>
                   </TabsList>
 
-                  <TabsContent value="overview" className="space-y-3">
+                  <TabsContent value="overview" className="space-y-4">
                     {recipeDetails?.summary && (
                       <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Descripción</CardTitle>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base sm:text-lg">Descripción</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <p className="text-gray-700 text-sm leading-relaxed">
+                          <p className="text-gray-700 text-sm sm:text-base leading-relaxed">
                             {cleanHtmlContent(recipeDetails.summary)}
                           </p>
                         </CardContent>
@@ -280,13 +306,13 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
 
                     {recipe.dishTypes && recipe.dishTypes.length > 0 && (
                       <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">Tipo de Plato</CardTitle>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base sm:text-lg">Tipo de Plato</CardTitle>
                         </CardHeader>
                         <CardContent>
-                          <div className="flex flex-wrap gap-1">
+                          <div className="flex flex-wrap gap-2">
                             {recipe.dishTypes.map((type, index) => (
-                              <Badge key={index} variant="outline" className="text-xs">
+                              <Badge key={index} variant="outline" className="text-xs sm:text-sm px-2 py-1">
                                 {type}
                               </Badge>
                             ))}
@@ -296,114 +322,117 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                     )}
                   </TabsContent>
 
-                  <TabsContent value="ingredients" className="space-y-3">
+                  <TabsContent value="ingredients" className="space-y-4">
                     <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Lista de Ingredientes</CardTitle>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base sm:text-lg">Lista de Ingredientes</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {recipeDetails?.extendedIngredients ? (
-                          <div className="max-h-60 overflow-y-auto pr-2">
-                            <div className="space-y-2">
+                          <ScrollArea className="h-64 sm:h-80">
+                            <div className="space-y-3 pr-2">
                               {recipeDetails.extendedIngredients.map((ingredient, index) => (
-                                <div key={index} className="flex items-center space-x-2 p-2 bg-gray-50 rounded-lg">
-                                  <CheckCircle className="w-3 h-3 text-green-600 flex-shrink-0" />
-                                  <span className="flex-1 text-sm">
-                                    <strong>{ingredient.amount} {ingredient.unit}</strong> {ingredient.name}
-                                  </span>
+                                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                                  <CheckCircle className="w-4 h-4 text-green-600 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm sm:text-base font-medium text-gray-900">
+                                      {ingredient.amount} {ingredient.unit}
+                                    </p>
+                                    <p className="text-sm text-gray-700 capitalize">{ingredient.name}</p>
+                                  </div>
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          </ScrollArea>
                         ) : (
-                          <div className="text-center py-6 text-gray-500">
-                            <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-sm">Lista de ingredientes no disponible</p>
-                            <p className="text-xs">Consulta la receta original para más detalles</p>
+                          <div className="text-center py-8 text-gray-500">
+                            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                            <p className="text-sm sm:text-base font-medium">Lista de ingredientes no disponible</p>
+                            <p className="text-xs sm:text-sm mt-1">Consulta la receta original para más detalles</p>
                           </div>
                         )}
                       </CardContent>
                     </Card>
                   </TabsContent>
 
-                  <TabsContent value="instructions" className="space-y-3">
+                  <TabsContent value="instructions" className="space-y-4">
                     <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Instrucciones de Preparación</CardTitle>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base sm:text-lg">Instrucciones de Preparación</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {recipeDetails?.analyzedInstructions?.[0]?.steps ? (
-                          <div className="max-h-60 overflow-y-auto pr-2">
-                            <div className="space-y-3">
+                          <ScrollArea className="h-64 sm:h-80">
+                            <div className="space-y-4 pr-2">
                               {recipeDetails.analyzedInstructions[0].steps.map((step, index) => (
                                 <div key={index} className="flex space-x-3">
-                                  <div className="flex-shrink-0 w-6 h-6 bg-green-600 text-white rounded-full flex items-center justify-center font-semibold text-xs">
+                                  <div className="flex-shrink-0 w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center font-bold text-sm">
                                     {step.number}
                                   </div>
-                                  <div className="flex-1">
-                                    <p className="text-gray-700 text-sm leading-relaxed">{step.step}</p>
+                                  <div className="flex-1 pt-1">
+                                    <p className="text-gray-700 text-sm sm:text-base leading-relaxed">{step.step}</p>
                                   </div>
                                 </div>
                               ))}
                             </div>
-                          </div>
+                          </ScrollArea>
                         ) : (
-                          <div className="text-center py-6 text-gray-500">
-                            <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-sm">Instrucciones detalladas no disponibles</p>
-                            <p className="text-xs">Consulta la receta original para más detalles</p>
+                          <div className="text-center py-8 text-gray-500">
+                            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                            <p className="text-sm sm:text-base font-medium">Instrucciones detalladas no disponibles</p>
+                            <p className="text-xs sm:text-sm mt-1">Consulta la receta original para más detalles</p>
                           </div>
                         )}
                       </CardContent>
                     </Card>
                   </TabsContent>
 
-                  <TabsContent value="nutrition" className="space-y-3">
+                  <TabsContent value="nutrition" className="space-y-4">
                     <Card>
-                      <CardHeader className="pb-2">
-                        <CardTitle className="text-base">Información Nutricional</CardTitle>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base sm:text-lg">Información Nutricional</CardTitle>
                       </CardHeader>
                       <CardContent>
                         {macros ? (
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                             {macros.protein && (
-                              <div className="text-center p-2 bg-blue-50 rounded-lg">
-                                <p className="text-xs text-blue-600">Proteínas</p>
-                                <p className="text-base font-bold text-blue-600">
+                              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-100">
+                                <p className="text-xs sm:text-sm text-blue-600 font-medium mb-1">Proteínas</p>
+                                <p className="text-lg sm:text-xl font-bold text-blue-800">
                                   {Math.round(macros.protein.amount)}g
                                 </p>
                               </div>
                             )}
                             {macros.carbs && (
-                              <div className="text-center p-2 bg-orange-50 rounded-lg">
-                                <p className="text-xs text-orange-600">Carbohidratos</p>
-                                <p className="text-base font-bold text-orange-600">
+                              <div className="text-center p-4 bg-orange-50 rounded-lg border border-orange-100">
+                                <p className="text-xs sm:text-sm text-orange-600 font-medium mb-1">Carbohidratos</p>
+                                <p className="text-lg sm:text-xl font-bold text-orange-800">
                                   {Math.round(macros.carbs.amount)}g
                                 </p>
                               </div>
                             )}
                             {macros.fat && (
-                              <div className="text-center p-2 bg-purple-50 rounded-lg">
-                                <p className="text-xs text-purple-600">Grasas</p>
-                                <p className="text-base font-bold text-purple-600">
+                              <div className="text-center p-4 bg-purple-50 rounded-lg border border-purple-100">
+                                <p className="text-xs sm:text-sm text-purple-600 font-medium mb-1">Grasas</p>
+                                <p className="text-lg sm:text-xl font-bold text-purple-800">
                                   {Math.round(macros.fat.amount)}g
                                 </p>
                               </div>
                             )}
                             {macros.fiber && (
-                              <div className="text-center p-2 bg-green-50 rounded-lg">
-                                <p className="text-xs text-green-600">Fibra</p>
-                                <p className="text-base font-bold text-green-600">
+                              <div className="text-center p-4 bg-green-50 rounded-lg border border-green-100">
+                                <p className="text-xs sm:text-sm text-green-600 font-medium mb-1">Fibra</p>
+                                <p className="text-lg sm:text-xl font-bold text-green-800">
                                   {Math.round(macros.fiber.amount)}g
                                 </p>
                               </div>
                             )}
                           </div>
                         ) : (
-                          <div className="text-center py-6 text-gray-500">
-                            <AlertCircle className="w-8 h-8 mx-auto mb-2" />
-                            <p className="text-sm">Información nutricional no disponible</p>
-                            <p className="text-xs">Los datos nutricionales se cargarán cuando estén disponibles</p>
+                          <div className="text-center py-8 text-gray-500">
+                            <AlertCircle className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+                            <p className="text-sm sm:text-base font-medium">Información nutricional no disponible</p>
+                            <p className="text-xs sm:text-sm mt-1">Los datos nutricionales se cargarán cuando estén disponibles</p>
                           </div>
                         )}
                       </CardContent>
@@ -411,11 +440,11 @@ export function RecipeDetailModal({ recipe, isOpen, onClose }: RecipeDetailModal
                   </TabsContent>
                 </Tabs>
 
-                {/* Error handling */}
+                {/* Error handling - Mejorado */}
                 {error && (
-                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <div className="flex items-center">
-                      <AlertCircle className="w-4 h-4 text-yellow-600 mr-2" />
+                      <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0" />
                       <p className="text-sm text-yellow-700">{error}</p>
                     </div>
                   </div>

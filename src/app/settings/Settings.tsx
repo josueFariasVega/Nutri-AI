@@ -207,18 +207,120 @@ export function Settings({ user, onNavigate }: SettingsProps) {
     }
   }; 
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      '¿Estás seguro de que quieres eliminar tu cuenta?\\n\\nEsta acción es irreversible y eliminará todos tus datos, incluyendo:\\n• Tu perfil y preferencias\\n• Historial de planes nutricionales\\n• Progreso y métricas\\n• Todas las configuraciones\\n\\nEscribe \"ELIMINAR\" para confirmar.'
+      '⚠️ ELIMINAR CUENTA PERMANENTEMENTE\n\n' +
+      'Esta acción eliminará TODOS tus datos:\n' +
+      '• Perfil y configuraciones\n' +
+      '• Historial nutricional completo\n' +
+      '• Progreso y métricas\n\n' +
+      '¿Estás COMPLETAMENTE SEGURO?'
     );
     
-    if (confirmed) {
-      const confirmation = prompt('Escribe \"ELIMINAR\" para confirmar la eliminación de tu cuenta:');
-      if (confirmation === 'ELIMINAR') {
-        toast.error('Funcionalidad de eliminación de cuenta no implementada en el prototipo');
-      } else {
-        toast.info('Eliminación de cuenta cancelada');
+    if (!confirmed) {
+      toast.info('Eliminación cancelada');
+      return;
+    }
+  
+    const confirmation = prompt('Escribe "ELIMINAR CUENTA" para confirmar:');
+    if (confirmation !== 'ELIMINAR CUENTA') {
+      if (confirmation !== null) {
+        toast.error('Texto incorrecto. Eliminación cancelada.');
       }
+      return;
+    }
+  
+    setLoading(true);
+    
+    try {
+      toast.loading('Eliminando cuenta...', { id: 'delete-account' });
+  
+      // 1️⃣ OBTENER SESIÓN
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No hay sesión activa');
+      }
+  
+      const userId = session.user.id;
+      console.log('🗑️ Eliminando cuenta para usuario:', userId);
+  
+      // 2️⃣ ELIMINAR DATOS DE SUPABASE
+      try {
+        await supabase.from('user_settings').delete().eq('user_id', userId);
+        await supabase.from('nutrition_plans').delete().eq('user_id', userId);
+        await supabase.from('user_profiles').delete().eq('user_id', userId);
+        console.log('✅ Datos de Supabase eliminados');
+      } catch (supabaseError) {
+        console.warn('Error eliminando datos de Supabase:', supabaseError);
+      }
+  
+      // 3️⃣ LIMPIAR LOCALSTORAGE COMPLETO
+      const keysToDelete = [
+        'daily_meal_plan',
+        'last_plan_generation', 
+        'nutrition_historical_data',
+        'user_settings',
+        'user_preferences'
+      ];
+  
+      keysToDelete.forEach(key => {
+        try {
+          localStorage.removeItem(key);
+        } catch (e) {
+          console.warn(`Error eliminando ${key}:`, e);
+        }
+      });
+  
+      // Limpiar claves relacionadas con Supabase y nutrición
+      Object.keys(localStorage).forEach(key => {
+        if (
+          key.includes('supabase') || 
+          key.includes('nutri') || 
+          key.includes('meal') || 
+          key.includes('user') ||
+          key.includes('auth')
+        ) {
+          try {
+            localStorage.removeItem(key);
+          } catch (e) {
+            console.warn(`Error eliminando ${key}:`, e);
+          }
+        }
+      });
+  
+      console.log('✅ localStorage limpiado');
+  
+      // 4️⃣ CERRAR SESIÓN
+      await supabase.auth.signOut();
+      console.log('✅ Sesión cerrada');
+  
+      // 5️⃣ LIMPIAR ESTADO ADICIONAL
+      sessionStorage.clear();
+      
+      // 6️⃣ NOTIFICACIÓN Y REDIRECCIÓN
+      toast.success('✅ Cuenta eliminada exitosamente', { id: 'delete-account' });
+      
+      setTimeout(() => {
+        toast.success(
+          'Tu cuenta ha sido eliminada completamente.\n' +
+          'Puedes crear una nueva cuenta cuando quieras.\n' +
+          'Redirigiendo al inicio...',
+          { duration: 4000 }
+        );
+        
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 2000);
+      }, 1000);
+  
+    } catch (error) {
+      console.error('❌ Error eliminando cuenta:', error);
+      toast.error(
+        'Error eliminando la cuenta. Contacta soporte si persiste.',
+        { id: 'delete-account' }
+      );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -238,7 +340,7 @@ export function Settings({ user, onNavigate }: SettingsProps) {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-green-50 to-emerald-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-8">
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"

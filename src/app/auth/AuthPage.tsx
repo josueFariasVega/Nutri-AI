@@ -381,7 +381,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid {/*grid-cols-2*/} gap-4">
               <Button
                 variant="outline"
                 onClick={() => handleSocialAuth('google')}
@@ -391,7 +391,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
                 <Chrome className="mr-2 w-4 h-4 text-blue-600" />
                 Google
               </Button>
-              <Button
+              {/*<Button
                 variant="outline"
                 onClick={() => handleSocialAuth('github')}
                 disabled={isLoading}
@@ -399,7 +399,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
               >
                 <Github className="mr-2 w-4 h-4 text-gray-700" />
                 GitHub
-              </Button>
+              </Button>*/}
             </div>
 
             <p className="text-xs text-center text-gray-600">

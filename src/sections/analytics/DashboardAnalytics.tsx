@@ -222,7 +222,7 @@ const historicalData: Record<string, any> = useMemo(() => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-center justify-between md:w-1/2">
         <div>
           <h1 className="text-2xl font-bold text-green-600">Analytics Detallado</h1>
           <p className="mt-1">Análisis profundo de tu progreso nutricional</p>
@@ -234,9 +234,9 @@ const historicalData: Record<string, any> = useMemo(() => {
             </div>
           )}
         </div>
-        <div className="flex items-center space-x-2">
-          <Calendar className="w-4 h-4 text-green-600" />
-          <span className="text-sm">Datos en tiempo real</span>
+        <div className="flex items-center space-x-2 md:w-1/2">
+          <Calendar className="w-4 h-4 text-green-600 mt-3" />
+          <span className="text-sm mt-3 md:mt-0">Datos en tiempo real</span>
         </div>
       </div>
 

@@ -5,6 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useMealTracking } from '../../hooks/useMealTracking';
 import { RecipeSearchEngine } from '../../components/RecipeSearchEngine';
+import { toast } from 'sonner@2.0.3'; 
 
 interface DashboardNutritionProps {
   activeSubsection?: string;
@@ -43,10 +44,14 @@ export function DashboardNutrition({ activeSubsection = 'meal-plan' }: Dashboard
     }
   ];
 
+  const handleCommingSoon = async () => {
+    toast.info('Esta funcionalidad está en desarrollo');
+  }
+
   const renderMealPlanContent = () => (
     <div className="space-y-6">
       {/* Nutrition Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border-blue-500/30">
           <CardContent className="p-6">
             <div className="text-center">
@@ -131,7 +136,7 @@ export function DashboardNutrition({ activeSubsection = 'meal-plan' }: Dashboard
         <CardContent>
           {/* Progress Summary */}
           <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-green-50 rounded-lg border border-blue-100">
-            <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div>
                 <h4 className="font-medium text-gray-900">Progreso del Día</h4>
                 <p className="text-sm text-gray-600">
@@ -250,7 +255,7 @@ export function DashboardNutrition({ activeSubsection = 'meal-plan' }: Dashboard
           <p className="text-sm text-green-600 mt-1">Basadas en tus preferencias y restricciones</p>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6 sm:gap-4">
             {recipes.map((recipe) => (
               <div key={recipe.id} className="bg-white/5 border border-white/10 rounded-lg p-4 hover:bg-white/10 transition-all duration-200">
                 <div className="text-center mb-3">
@@ -295,7 +300,9 @@ export function DashboardNutrition({ activeSubsection = 'meal-plan' }: Dashboard
                   </div>
                 </div>
 
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white text-sm">
+                <Button 
+                onClick={handleCommingSoon}
+                className="w-full bg-green-600 hover:bg-green-700 text-white text-sm">
                   Ver Receta
                 </Button>
               </div>

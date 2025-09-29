@@ -352,10 +352,11 @@ export function DashboardNotifications() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full">
+        {/* Bloque de texto */}
+        <div className="md:flex md:items-center md:space-x-4">
           <h1 className="text-2xl font-bold">Centro de Notificaciones</h1>
-          <p className="text-slate-400 mt-1">
+          <p className="text-slate-400 mt-1 md:mt-0">
             Mantente al día con tu progreso nutricional
             {unreadCount > 0 && (
               <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-500/20 text-red-400 border border-red-500/30">
@@ -364,20 +365,22 @@ export function DashboardNotifications() {
             )}
           </p>
         </div>
-        
-        <div className="flex items-center space-x-2">
-          {unreadCount > 0 && (
+
+        {/* Botón */}
+        {unreadCount > 0 && (
+          <div>
             <Button
               onClick={markAllAsRead}
               variant="outline"
-              className="border-slate-600 text-slate-300 hover:bg-slate-700"
+              className="border-slate-600 text-slate-300 hover:bg-slate-700 flex items-center"
             >
               <CheckCircle className="w-4 h-4 mr-2" />
               Marcar todas como leídas
             </Button>
-          )}
-        </div>
+          </div>
+        )}
       </div>
+
 
       {/* Notifications Summary */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

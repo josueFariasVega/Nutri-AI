@@ -332,14 +332,16 @@ export function DashboardLayout({ user, onSignOut, onNavigate }: DashboardLayout
 
         {/* Contenido de la Sección con Scroll Independiente */}
         <div className="flex-1 overflow-y-auto">
-          <div className={cn(
-            "p-6",
-            isDesktop ? "pb-6" : "pb-24"
-          )}>
+          <div 
+            className="p-6"
+            style={{
+              paddingBottom: isDesktop ? '1.5rem' : 'calc(7rem + env(safe-area-inset-bottom, 0px))',
+              marginBottom: isDesktop ? '0' : 'env(safe-area-inset-bottom, 0px)'
+            }}
+          >
             {renderContent()}
           </div>
         </div>
-      </div>
 
       {/* Bottom Navigation Mobile - SOLO móviles */}
       {!isDesktop && (
@@ -362,7 +364,7 @@ export function DashboardLayout({ user, onSignOut, onNavigate }: DashboardLayout
                   )}
                 >
                   <div className={cn(
-                    "relative mb-1 transition-all duration-300",
+                    "relative transition-all duration-300",
                     isActive ? "transform -translate-y-0.5" : ""
                   )}>
                     <Icon className={cn(
@@ -374,10 +376,10 @@ export function DashboardLayout({ user, onSignOut, onNavigate }: DashboardLayout
                     )}
                   </div>
                   <span className={cn(
-                    "text-xs font-semibold truncate transition-all duration-300",
+                    "text-xs font-semibold truncate transition-all duration-300 text-center w-full",
                     isActive 
                       ? "text-white drop-shadow-sm" 
-                      : "text-gray-500 group-hover:text-green-600"
+                      : "text-gray-500 hover:text-green-600"
                   )}>
                     {item.label}
                   </span>
@@ -533,6 +535,7 @@ export function DashboardLayout({ user, onSignOut, onNavigate }: DashboardLayout
           </div>
         </div>
       )}
+    </div>
     </div>
   );
 }

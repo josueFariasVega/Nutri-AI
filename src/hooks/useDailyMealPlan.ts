@@ -131,12 +131,12 @@ export function useDailyMealPlan() {
   const HISTORICAL_DATA_KEY = 'nutrition_historical_data';
 
   // ✅ REFERENCIAS PARA ACCEDER A FUNCIONES DESDE CALLBACKS ASÍNCRONOS
-  const checkAndResetDailyPlanRef = useRef<() => Promise<void>>();
+  const checkAndResetDailyPlanRef = useRef<(() => Promise<void>) | null>(null);
   const generateDailyPlanRef = useRef<(preserveCompletedMeals?: boolean) => Promise<void>>();
-  const saveHistoricalDataRef = useRef<(planData: DailyPlanData) => void>();
+  const saveHistoricalDataRef = useRef<((planData: DailyPlanData) => void) | null>(null);
   const showDayChangeNotificationRef = useRef<() => void>();
   const setDailyPlanRef = useRef<(plan: DailyPlanData | null) => void>();
-  const setLoadingRef = useRef<(loading: boolean) => void>();
+  const setLoadingRef = useRef<((loading: boolean) => void) | null>(null);
   const dailyPlanRef = useRef<DailyPlanData | null>(null);
 
   // Actualizar referencia del estado
@@ -602,130 +602,89 @@ export function useDailyMealPlan() {
     });
   }, []);
 
-
-  const checkAndResetDailyPlan = useCallback(async (): Promise<void> => {
+  // ✅ AGREGAR AQUÍ (ANTES de checkAndResetDailyPlan línea 606)
+const handleServiceWorkerReset = useCallback(async (data: any) => {
+  try {
+    logger.log('🌅 Service Worker solicita reset diario:', data);
+    
     const currentDate = getCurrentDate();
-    logger.log(`🔍 Verificando plan diario. Fecha actual: ${currentDate}`);
-  
-    let storedPlan: DailyPlanData | null = null;
-    try {
-      const stored = localStorage.getItem(DAILY_PLAN_KEY);
-      if (stored) {
-        const planData: DailyPlanData = JSON.parse(stored);
-        logger.log(`📋 Plan almacenado encontrado para: ${planData.date}`);
-      
-        if (planData.date !== currentDate) {
-          logger.log(`🔄 Cambio de día detectado: ${planData.date} → ${currentDate}`);
-          
-          logger.log('💾 Guardando datos históricos del día anterior...');
-          if (saveHistoricalDataRef.current) {
-            saveHistoricalDataRef.current(planData);
-            resetDailyPlanState()
-          }
+    const stored = localStorage.getItem(DAILY_PLAN_KEY);
+    
+    if (stored && saveHistoricalDataRef.current) {
+      const planData: DailyPlanData = JSON.parse(stored);
+      if (planData.date !== currentDate) {
+        logger.log('💾 Guardando datos históricos desde Service Worker...');
+        saveHistoricalDataRef.current(planData);
         
-          localStorage.removeItem(DAILY_PLAN_KEY);
-          localStorage.removeItem(LAST_GENERATION_KEY);
-          
-          logger.log('🔄 Regenerando plan nutricional completo desde API...');
-          try {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session) {
-              const response = await fetchEdge('regenerate-plan', {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${session.access_token}` },
-              });
-              
-              if (response.ok) {
-                logger.log('✅ Plan nutricional regenerado exitosamente desde API');
-              } else {
-                logger.warn('⚠️ No se pudo regenerar plan desde API, usando plan existente');
-              }
-            }
-          } catch (error) {
-            logger.error('❌ Error regenerando plan nutricional:', error);
-          }
-          
-          logger.log('🆕 Generando nuevo plan para el día actual...');
-          if (generateDailyPlanRef.current) {
-            await generateDailyPlanRef.current(false);
-          }
-          return;
-        } else {
-          logger.log('✅ Plan actual es del día correcto');
-          storedPlan = planData;
+        // Limpiar y regenerar
+        localStorage.removeItem(DAILY_PLAN_KEY);
+        localStorage.removeItem(LAST_GENERATION_KEY);
+        
+        if (generateDailyPlanRef.current) {
+          await generateDailyPlanRef.current(false);
         }
+        
+        logger.log('✅ Reset diario completado desde Service Worker');
       } else {
-        logger.log('📋 No hay plan almacenado');
+        logger.log('📋 Plan ya actual desde Service Worker');
       }
-    } catch (error) {
-      logger.error('❌ Error checking stored plan:', error);
-      localStorage.removeItem(DAILY_PLAN_KEY);
-      localStorage.removeItem(LAST_GENERATION_KEY);
     }
-  
+  } catch (error) {
+    logger.error('❌ Error en reset desde Service Worker:', error);
+  }
+}, []);
+
+
+ // ✅ FUNCIÓN CRÍTICA: checkAndResetDailyPlan
+const checkAndResetDailyPlan = useCallback(async (): Promise<void> => {
+  try {
+    const currentDate = getCurrentDate();
+    const storedPlan = localStorage.getItem(DAILY_PLAN_KEY);
+    
     if (!storedPlan) {
-      logger.log('🆕 Generando nuevo plan...');
-      if (generateDailyPlanRef.current) {
-        await generateDailyPlanRef.current(false);
+      logger.log('📋 No hay plan almacenado, generando nuevo plan');
+      await generateDailyPlan();
+      return;
+    }
+    
+    const planData: DailyPlanData = JSON.parse(storedPlan);
+    
+    // ✅ Si la fecha del plan es diferente a hoy → HACER RESET
+    if (planData.date !== currentDate) {
+      logger.log(`🔄 Cambio de día detectado: ${planData.date} → ${currentDate}`);
+      
+      // 1. 📊 GUARDAR DATOS DEL DÍA ANTERIOR COMO HISTÓRICOS
+      if (saveHistoricalDataRef.current) {
+        await saveHistoricalDataRef.current(planData);
       }
+      
+      // 2. 🗑️ LIMPIAR DATOS DEL DÍA ANTERIOR
+      localStorage.removeItem(DAILY_PLAN_KEY);
+      
+      // 3. 🆕 GENERAR NUEVO PLAN PARA HOY
+      await generateDailyPlan();
+      
+      logger.log(`✅ Reset diario completado: ${planData.date} → ${currentDate}`);
     } else {
-      logger.log('📋 Cargando plan existente...');
-      if (setDailyPlanRef.current) {
-        setDailyPlanRef.current({
-          ...storedPlan,
-          dailyMeals: storedPlan.dailyMeals
-        });
-      }
+      logger.log(`📋 Plan del día actual ya existe: ${currentDate}`);
+      
+      // Restaurar plan desde localStorage
+      setDailyPlan(planData);
       if (setLoadingRef.current) {
         setLoadingRef.current(false);
       }
     }
-  }, []);
+  } catch (error) {
+    logger.error('❌ Error en checkAndResetDailyPlan:', error);
+    // Fallback: generar nuevo plan
+    await generateDailyPlan();
+  }
+}, [generateDailyPlan]);
 
-  // ✅ Actualizar referencia
-  checkAndResetDailyPlanRef.current = checkAndResetDailyPlan;
+window.testHook = { checkAndResetDailyPlan };
 
-  const handleServiceWorkerReset = useCallback(async (data: any) => {
-    try {
-      logger.log('🔄 Reset diario solicitado por Service Worker');
-      
-      const currentDate = getCurrentDate();
-      const stored = localStorage.getItem(DAILY_PLAN_KEY);
-      
-      if (stored && saveHistoricalDataRef.current) {
-        const planData: DailyPlanData = JSON.parse(stored);
-        if (planData.date !== currentDate) {
-          saveHistoricalDataRef.current(planData);
-          resetDailyPlanState()
-        }
-      }
-      
-      localStorage.removeItem(DAILY_PLAN_KEY);
-      localStorage.removeItem(LAST_GENERATION_KEY);
-      
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          await fetchEdge('regenerate-plan', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${session.access_token}` },
-          });
-        }
-      } catch (error) {
-        logger.error('Error regenerando plan:', error);
-      }
-      
-      if (generateDailyPlanRef.current) {
-        await generateDailyPlanRef.current(false);
-      }
-      if (showDayChangeNotificationRef.current) {
-        showDayChangeNotificationRef.current();
-      }
-      
-    } catch (error) {
-      logger.error('Error en reset diario:', error);
-    }
-  }, []);
+checkAndResetDailyPlanRef.current = checkAndResetDailyPlan;
+saveHistoricalDataRef.current = saveHistoricalData;
 
   const setupPeriodicCheck = useCallback((): (() => void) => {
     const checkInterval = setInterval(async () => {

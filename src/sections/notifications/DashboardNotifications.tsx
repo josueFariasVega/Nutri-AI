@@ -7,7 +7,7 @@ import { Switch } from '../../components/ui/switch';
 import { Label } from '../../components/ui/label';
 import { useMealTracking } from '../../hooks/useMealTracking';
 import { useLoadingNotifications } from '../../components/ui/notifications';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 
 interface Notification {
   id: string;

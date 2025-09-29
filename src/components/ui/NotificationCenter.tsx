@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { X, Bell, Clock, CheckCircle, AlertTriangle, Info, Target } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
+
 
 interface NotificationCenterProps {
   isOpen: boolean;

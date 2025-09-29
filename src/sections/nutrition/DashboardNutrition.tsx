@@ -5,7 +5,7 @@ import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import { useMealTracking } from '../../hooks/useMealTracking';
 import { RecipeSearchEngine } from '../../components/RecipeSearchEngine';
-import { toast } from 'sonner@2.0.3'; 
+import { toast } from 'sonner';
 
 interface DashboardNutritionProps {
   activeSubsection?: string;

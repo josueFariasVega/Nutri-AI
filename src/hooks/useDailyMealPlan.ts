@@ -477,7 +477,8 @@ export function useDailyMealPlan() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('No hay sesión activa');
+        console.log('🔍 No active session, skipping operation');
+        return null; // No lanzar error, simplemente salir
       }
 
       const response = await fetchEdge('nutrition-plan', {
@@ -795,6 +796,14 @@ useEffect(() => {
   if (hasInitialized.current) return;
   
   const initializePlan = async () => {
+    
+    // Solo ejecutar si hay una sesión activa
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.log('🔍 No session found, waiting for authentication');
+      return;
+    }
+
     if (setLoadingRef.current) {
       setLoadingRef.current(true);
     }

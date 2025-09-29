@@ -132,7 +132,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
-          redirectTo: `${VITE_REDIRECT_URL}/auth`,
+          redirectTo: `${VITE_REDIRECT_URL}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

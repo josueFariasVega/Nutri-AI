@@ -59,8 +59,8 @@ function validateEnvironmentVariables(): void {
   if (isDevelopment) {
     console.log('✅ Variables de entorno validadas correctamente')
     console.log(`🌍 Entorno: ${VITE_APP_ENV}`)
-    console.log(`🔗 Supabase URL: ${VITE_SUPABASE_URL}`)
-    console.log(`🔑 Spoonacular API: ${VITE_SPOONACULAR_API_KEY.substring(0, 8)}...`)
+    //console.log(`🔗 Supabase URL: ${VITE_SUPABASE_URL}`)
+    //console.log(`🔑 Spoonacular API: ${VITE_SPOONACULAR_API_KEY.substring(0, 8)}...`)
   }
 }
 

@@ -929,6 +929,7 @@ const regeneratePlan = useCallback(async (): Promise<void> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw new Error('No hay sesión activa');
+      return
     }
 
     if (setLoadingRef.current) {
@@ -1090,6 +1091,7 @@ const regenerateNutritionPlan = useCallback(async (): Promise<void> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       throw new Error('No hay sesión activa');
+      return
     }
 
     const response = await fetchEdge('regenerate-plan', {

@@ -25,9 +25,9 @@ export class SpoonacularService {
     this.baseUrl = API_CONFIG.SPOONACULAR.BASE_URL;
     
     // Debug: Verificar clave API
-    console.log('🔑 API Key configurada:', this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'NO ENCONTRADA');
-    console.log('🌐 Base URL:', this.baseUrl);
-    console.log('🔍 API Key completa para debug:', this.apiKey);
+    //console.log('🔑 API Key configurada:', this.apiKey ? `${this.apiKey.substring(0, 8)}...` : 'NO ENCONTRADA');
+    //console.log('🌐 Base URL:', this.baseUrl);
+    //console.log('🔍 API Key completa para debug:', this.apiKey);
   }
 
   /**
@@ -49,16 +49,16 @@ export class SpoonacularService {
 
     const url = `${this.baseUrl}${API_CONFIG.SPOONACULAR.ENDPOINTS.SEARCH}?${searchParams}`;
 
-    console.log('🔍 URL de búsqueda:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
+    //console.log('🔍 URL de búsqueda:', url.replace(this.apiKey, 'API_KEY_HIDDEN'));
 
     try {
       const response = await fetch(url);
       
-      console.log('📡 Respuesta de API:', {
+      /*console.log('📡 Respuesta de API:', {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries())
-      });
+      });*/
       
       if (!response.ok) {
         const errorText = await response.text();
@@ -67,10 +67,10 @@ export class SpoonacularService {
       }
 
       const data = await response.json();
-      console.log('✅ Datos recibidos:', data);
+      //console.log('✅ Datos recibidos:', data);
       return data;
     } catch (error) {
-      console.error('Error searching recipes:', error);
+      //console.error('Error searching recipes:', error);
       throw error;
     }
   }

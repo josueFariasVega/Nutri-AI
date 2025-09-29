@@ -477,7 +477,7 @@ export function useDailyMealPlan() {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        console.log('🔍 No active session, skipping operation');
+        logger.debug?.('🔍 No hay sesión activa, se omite la operación');
         return null; // No lanzar error, simplemente salir
       }
 
@@ -800,7 +800,7 @@ useEffect(() => {
     // Solo ejecutar si hay una sesión activa
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      console.log('🔍 No session found, waiting for authentication');
+      logger.debug?.('🔍 No session found, waiting for authentication');
       return;
     }
 
@@ -928,7 +928,7 @@ const regeneratePlan = useCallback(async (): Promise<void> => {
   try {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      throw new Error('No hay sesión activa');
+      logger.debug?.('🔍 No hay sesión activa, se omite la operación');
       return
     }
 
@@ -1090,7 +1090,7 @@ const regenerateNutritionPlan = useCallback(async (): Promise<void> => {
     
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      throw new Error('No hay sesión activa');
+      logger.debug?.('🔍 No hay sesión activa, se omite la operación');
       return
     }
 

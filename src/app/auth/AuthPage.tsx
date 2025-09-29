@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../../lib/utils/supabase/client';
+import { VITE_REDIRECT_URL } from '../../lib/utils/env';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -131,7 +132,7 @@ export function AuthPage({ onNavigate }: AuthPageProps) {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: provider,
         options: {
-          redirectTo: `${window.location.origin}/auth`,
+          redirectTo: `${VITE_REDIRECT_URL}/auth`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

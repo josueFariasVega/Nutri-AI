@@ -11,7 +11,7 @@ export const VITE_SUPABASE_ANON_KEY: string = import.meta.env.VITE_SUPABASE_ANON
 export const VITE_SPOONACULAR_API_KEY: string = import.meta.env.VITE_SPOONACULAR_API_KEY
 
 // Environment Configuration
-export const VITE_APP_ENV: string = import.meta.env.VITE_APP_ENV || 'development'
+export const VITE_REDIRECT_URL: string = import.meta.env.VITE_REDIRECT_URL || window.location.origin
 
 // Production Features
 export const VITE_ENABLE_ANALYTICS: boolean = import.meta.env.VITE_ENABLE_ANALYTICS === 'true'

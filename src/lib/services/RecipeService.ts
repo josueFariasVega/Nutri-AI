@@ -79,16 +79,45 @@ export class RecipeService {
       }
 
       // 2. Buscar en API externa
-      logger.log('🌐 Intentando obtener recetas de API externa...');
-      const apiRecipes = await this.fetchFromAPI(request);
-      if (apiRecipes.length > 0) {
-        this.updateCache(request, apiRecipes);
-        logger.log(`🌐 Obtenidas ${apiRecipes.length} recetas de API`);
-        return this.selectBestRecipes(apiRecipes, request);
+      try {
+        logger.log('🌐 Intentando obtener recetas de API externa...');
+        const apiRecipes = await this.fetchFromAPI(request);
+        if (apiRecipes.length > 0) {
+          this.updateCache(request, apiRecipes);
+          logger.log(`🌐 Obtenidas ${apiRecipes.length} recetas de API`);
+          return this.selectBestRecipes(apiRecipes, request);
+        }
+      } catch (error: any) {
+        // Si es límite de API excedido, usar recetas locales inmediatamente
+        if (error.message === 'API_LIMIT_EXCEEDED') {
+          logger.warn('⚠️ Límite de API excedido, usando recetas locales');
+          return this.getFallbackRecipes(request);
+        }
+
+        // Para otros errores, intentar una vez más con menos parámetros
+        logger.warn('⚠️ Error de API, intentando con parámetros mínimos:', error);
+        try {
+          const minimalRequest = {
+            ...request,
+            preferences: {
+              diet_type: 'none',
+              disliked_food: [],
+              allergies: []
+            }
+          };
+          const apiRecipes = await this.fetchFromAPI(minimalRequest);
+          if (apiRecipes.length > 0) {
+            this.updateCache(request, apiRecipes);
+            logger.log(`🌐 Obtenidas ${apiRecipes.length} recetas con parámetros mínimos`);
+            return this.selectBestRecipes(apiRecipes, request);
+          }
+        } catch (secondError) {
+          logger.warn('⚠️ Segundo intento fallido, usando recetas locales');
+        }
       }
 
       // 3. Fallback a recetas locales mejoradas
-      logger.warn('⚠️ API no disponible, usando fallback local');
+      logger.warn('⚠️ Usando recetas locales como fallback');
       return this.getFallbackRecipes(request);
 
     } catch (error) {
@@ -123,7 +152,7 @@ export class RecipeService {
    */
   private async fetchFromAPI(request: MealPlanRequest): Promise<Recipe[]> {
     let attempts = 0;
-    
+
     while (attempts < this.MAX_RETRIES) {
       try {
         const response = await spoonacularService.getRecipesByMealType(
@@ -151,15 +180,21 @@ export class RecipeService {
           spoonacularId: recipe.id
         }));
 
-      } catch (error) {
+      } catch (error: any) {
         attempts++;
         logger.warn(`⚠️ Intento ${attempts} fallido:`, error);
-        
+
+        // Si es error 402 (límite excedido), no reintentar
+        if (error.message && error.message.includes('402')) {
+          logger.error('❌ Límite de API excedido, usando recetas locales');
+          throw new Error('API_LIMIT_EXCEEDED');
+        }
+
         if (attempts >= this.MAX_RETRIES) {
           throw error;
         }
-        
-        // Esperar antes del siguiente intento
+
+        // Esperar antes del siguiente intento (solo para errores diferentes a 402)
         await new Promise(resolve => setTimeout(resolve, 1000 * attempts));
       }
     }

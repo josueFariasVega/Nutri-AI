@@ -53,16 +53,22 @@ export class SpoonacularService {
 
     try {
       const response = await fetch(url);
-      
+
       /*console.log('📡 Respuesta de API:', {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries())
       });*/
-      
+
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Error de API:', errorText);
+
+        // Si es error 402 (límite excedido), lanzar error específico
+        if (response.status === 402) {
+          throw new Error(`Spoonacular API error: ${response.status} - ${errorText}. Límite diario de puntos excedido.`);
+        }
+
         throw new Error(`Spoonacular API error: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
@@ -252,12 +258,44 @@ export class SpoonacularService {
    */
   private extractNutrient(nutrition?: SpoonacularNutrition, nutrientName?: string): number {
     if (!nutrition?.nutrients) return 0;
-    
+
     const nutrient = nutrition.nutrients.find(
       (n) => n.name.toLowerCase() === (nutrientName?.toLowerCase() || '')
     );
-    
+
     return Math.round(nutrient?.amount || 0);
+  }
+
+  /**
+   * Generar sugerencias de comidas de fallback cuando la API falla
+   * @param mealType - Tipo de comida
+   * @returns Array de sugerencias básicas
+   */
+  private getFallbackMealSuggestions(mealType: string): any[] {
+    const fallbackRecipes = {
+      breakfast: [
+        { name: 'Avena con frutas', calories: 320, protein: 12, carbs: 45, fat: 8 },
+        { name: 'Tostada con aguacate', calories: 280, protein: 8, carbs: 25, fat: 16 },
+        { name: 'Yogurt con granola', calories: 300, protein: 15, carbs: 35, fat: 10 }
+      ],
+      lunch: [
+        { name: 'Ensalada de quinoa', calories: 450, protein: 18, carbs: 55, fat: 15 },
+        { name: 'Sándwich integral', calories: 380, protein: 22, carbs: 42, fat: 12 },
+        { name: 'Sopa de verduras', calories: 220, protein: 8, carbs: 28, fat: 6 }
+      ],
+      dinner: [
+        { name: 'Pechuga de pollo asada', calories: 320, protein: 35, carbs: 8, fat: 12 },
+        { name: 'Salmón al horno', calories: 380, protein: 28, carbs: 5, fat: 24 },
+        { name: 'Ensalada de atún', calories: 290, protein: 25, carbs: 12, fat: 16 }
+      ],
+      snacks: [
+        { name: 'Mix de frutos secos', calories: 180, protein: 6, carbs: 12, fat: 14 },
+        { name: 'Manzana con mantequilla de almendras', calories: 200, protein: 5, carbs: 18, fat: 12 },
+        { name: 'Yogurt natural', calories: 120, protein: 10, carbs: 8, fat: 4 }
+      ]
+    };
+
+    return fallbackRecipes[mealType as keyof typeof fallbackRecipes] || fallbackRecipes.breakfast;
   }
 
 }

@@ -213,15 +213,16 @@ export function Settings({ user, onNavigate }: SettingsProps) {
       'Esta acción eliminará TODOS tus datos:\n' +
       '• Perfil y configuraciones\n' +
       '• Historial nutricional completo\n' +
-      '• Progreso y métricas\n\n' +
+      '• Progreso y métricas\n' +
+      '• Planes de comidas y recetas\n\n' +
       '¿Estás COMPLETAMENTE SEGURO?'
     );
-    
+
     if (!confirmed) {
       toast.info('Eliminación cancelada');
       return;
     }
-  
+
     const confirmation = prompt('Escribe "ELIMINAR CUENTA" para confirmar:');
     if (confirmation !== 'ELIMINAR CUENTA') {
       if (confirmation !== null) {
@@ -229,22 +230,22 @@ export function Settings({ user, onNavigate }: SettingsProps) {
       }
       return;
     }
-  
+
     setLoading(true);
-    
+
     try {
       toast.loading('Eliminando cuenta...', { id: 'delete-account' });
-  
+
       // 1️⃣ OBTENER SESIÓN
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
         throw new Error('No hay sesión activa');
       }
-  
+
       const userId = session.user.id;
       console.log('🗑️ Eliminando cuenta para usuario:', userId);
-  
-      // 2️⃣ ELIMINAR DATOS DE SUPABASE
+
+      // 2️⃣ ELIMINAR DATOS DEL SERVIDOR
       try {
         const response = await fetchEdge('delete-account', {
           method: 'DELETE',
@@ -253,62 +254,97 @@ export function Settings({ user, onNavigate }: SettingsProps) {
             'Content-Type': 'application/json',
           }
         });
-      
+
         if (response.ok) {
-          console.log('✅ Datos de Supabase eliminados');
+          console.log('✅ Datos del servidor eliminados correctamente');
         } else {
-          console.warn('Error eliminando datos de Supabase:', response.status);
+          console.warn('⚠️ Error eliminando datos del servidor:', response.status, await response.text());
+          // Continuar con la eliminación local incluso si falla el servidor
         }
       } catch (supabaseError) {
-        console.warn('Error eliminando datos de Supabase:', supabaseError);
+        console.warn('⚠️ Error eliminando datos del servidor:', supabaseError);
+        // Continuar con la eliminación local
       }
-  
-      // 3️⃣ LIMPIAR LOCALSTORAGE COMPLETO
+
+      // 3️⃣ LIMPIAR TODOS LOS DATOS LOCALES
+      console.log('🧹 Iniciando limpieza completa del navegador...');
+
+      // Lista completa de claves a eliminar
       const keysToDelete = [
         'daily_meal_plan',
-        'last_plan_generation', 
+        'last_plan_generation',
         'nutrition_historical_data',
         'user_settings',
-        'user_preferences'
+        'user_preferences',
+        'recipe_cache',
+        'user_profile',
+        'supabase.auth.token',
+        'supabase.auth.refreshToken'
       ];
-  
+
+      // Eliminar claves específicas
       keysToDelete.forEach(key => {
         try {
           localStorage.removeItem(key);
+          console.log('✅ Eliminada clave:', key);
         } catch (e) {
-          console.warn(`Error eliminando ${key}:`, e);
+          console.warn(`⚠️ Error eliminando ${key}:`, e);
         }
       });
-  
-      // Limpiar claves relacionadas con Supabase y nutrición
-      Object.keys(localStorage).forEach(key => {
+
+      // Limpiar todas las claves relacionadas con la aplicación
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
         if (
-          key.includes('supabase') || 
-          key.includes('nutri') || 
-          key.includes('meal') || 
+          key.includes('supabase') ||
+          key.includes('nutri') ||
+          key.includes('meal') ||
           key.includes('user') ||
-          key.includes('auth')
+          key.includes('auth') ||
+          key.includes('recipe') ||
+          key.includes('nutrition') ||
+          key.includes('questionnaire') ||
+          key.includes('plan') ||
+          key.includes('settings')
         ) {
           try {
             localStorage.removeItem(key);
+            console.log('✅ Eliminada clave relacionada:', key);
           } catch (e) {
-            console.warn(`Error eliminando ${key}:`, e);
+            console.warn(`⚠️ Error eliminando ${key}:`, e);
           }
         }
       });
-  
-      console.log('✅ localStorage limpiado');
-  
-      // 4️⃣ CERRAR SESIÓN
+
+      // Limpiar sessionStorage también
+      const sessionKeys = Object.keys(sessionStorage);
+      sessionKeys.forEach(key => {
+        if (
+          key.includes('supabase') ||
+          key.includes('nutri') ||
+          key.includes('auth')
+        ) {
+          try {
+            sessionStorage.removeItem(key);
+            console.log('✅ Eliminada clave de sesión:', key);
+          } catch (e) {
+            console.warn(`⚠️ Error eliminando sesión ${key}:`, e);
+          }
+        }
+      });
+
+      console.log('✅ Limpieza completa del navegador finalizada');
+
+      // 4️⃣ CERRAR SESIÓN Y LIMPIAR ESTADO
       await supabase.auth.signOut();
       console.log('✅ Sesión cerrada');
-  
+
       // 5️⃣ LIMPIAR ESTADO ADICIONAL
       sessionStorage.clear();
-      
+
       // 6️⃣ NOTIFICACIÓN Y REDIRECCIÓN
       toast.success('✅ Cuenta eliminada exitosamente', { id: 'delete-account' });
-      
+
       setTimeout(() => {
         toast.success(
           'Tu cuenta ha sido eliminada completamente.\n' +
@@ -316,12 +352,13 @@ export function Settings({ user, onNavigate }: SettingsProps) {
           'Redirigiendo al inicio...',
           { duration: 4000 }
         );
-        
+
+        // Forzar recarga completa para limpiar cualquier estado restante
         setTimeout(() => {
           window.location.href = '/';
         }, 2000);
       }, 1000);
-  
+
     } catch (error) {
       console.error('❌ Error eliminando cuenta:', error);
       toast.error(

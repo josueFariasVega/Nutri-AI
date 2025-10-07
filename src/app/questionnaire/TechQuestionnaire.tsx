@@ -51,13 +51,13 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
     },
     preferences: {
       dietType: '',
-      favoriteFood: [],
-      dislikedFood: [],
+      favoriteFood: [] as string[],
+      dislikedFood: [] as string[],
       culturalRestrictions: ''
     },
     restrictions: {
-      allergies: [],
-      intolerances: [],
+      allergies: [] as string[],
+      intolerances: [] as string[],
       medications: ''
     },
     lifestyle: {
@@ -123,7 +123,7 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
 
   const currentStepConfig = stepConfig[currentStep];
 
-  const updateAnswer = (section: string, field: string, value: any) => {
+  const updateAnswer = (section: keyof typeof answers, field: string, value: any) => {
     setAnswers(prev => ({
       ...prev,
       [section]: {
@@ -133,9 +133,9 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
     }));
   };
 
-  const updateArrayAnswer = (section: string, field: string, value: string, checked: boolean) => {
+  const updateArrayAnswer = (section: keyof typeof answers, field: string, value: string, checked: boolean) => {
     setAnswers(prev => {
-      const currentArray = prev[section][field] || [];
+      const currentArray = prev[section][field as keyof typeof prev[typeof section]] as string[] || [];
       if (checked) {
         return {
           ...prev,
@@ -149,7 +149,7 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
           ...prev,
           [section]: {
             ...prev[section],
-            [field]: currentArray.filter(item => item !== value)
+            [field]: currentArray.filter((item: string) => item !== value)
           }
         };
       }
@@ -157,6 +157,13 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
   };
 
   const handleNext = () => {
+    // Validar el paso actual antes de avanzar
+    const currentStepErrors = validateStep(currentStep);
+    if (currentStepErrors.length > 0) {
+      toast.error(`Completa los siguientes campos antes de continuar: ${currentStepErrors.join(', ')}`);
+      return;
+    }
+
     if (currentStep < totalSteps - 1) {
       setCurrentStep(currentStep + 1);
     }
@@ -168,7 +175,60 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
     }
   };
 
+  const validateStep = (stepIndex: number) => {
+    const errors: string[] = [];
+
+    switch (stepIndex) {
+      case 0: // Personal
+        if (!answers.personal.age) errors.push('Edad');
+        if (!answers.personal.gender) errors.push('Género');
+        if (!answers.personal.height) errors.push('Altura');
+        if (!answers.personal.weight) errors.push('Peso actual');
+        if (!answers.personal.targetWeight) errors.push('Peso objetivo');
+        if (!answers.personal.goal) errors.push('Objetivo principal');
+        if (!answers.personal.activityLevel) errors.push('Nivel de actividad física');
+        break;
+
+      case 1: // Preferences
+        if (!answers.preferences.dietType) errors.push('Tipo de dieta preferida');
+        break;
+
+      case 2: // Restrictions
+        // Opcional, pero validar si hay medicamentos
+        if (answers.restrictions.medications && answers.restrictions.medications.trim() === '') {
+          errors.push('Especifica los medicamentos o deja vacío');
+        }
+        break;
+
+      case 3: // Lifestyle
+        if (!answers.lifestyle.mealTimes) errors.push('Horarios de comida');
+        if (!answers.lifestyle.cookingFrequency) errors.push('Frecuencia de cocinar');
+        if (!answers.lifestyle.budget) errors.push('Presupuesto semanal');
+        if (!answers.lifestyle.prepTime) errors.push('Tiempo de preparación');
+        if (!answers.lifestyle.eatingOut) errors.push('Frecuencia de comer fuera');
+        break;
+
+      case 4: // Experience
+        if (!answers.experience.cookingLevel) errors.push('Nivel de experiencia culinaria');
+        break;
+    }
+
+    return errors;
+  };
+
   const handleSubmit = async () => {
+    // Validar que todos los campos requeridos estén completos
+    const allErrors: string[] = [];
+    for (let step = 0; step < totalSteps; step++) {
+      const stepErrors = validateStep(step);
+      allErrors.push(...stepErrors);
+    }
+
+    if (allErrors.length > 0) {
+      toast.error(`Campos faltantes: ${allErrors.join(', ')}`);
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -188,16 +248,43 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
 
       if (response.ok) {
         const result = await response.json();
-        //toast.success('¡Plan nutricional IA generado exitosamente!');
+        console.log('✅ Questionnaire submitted successfully:', result);
+
+        // Forzar actualización inmediata del estado del cuestionario
         if (refreshQuestionnaireStatus) {
+          console.log('🔄 Refreshing questionnaire status...');
           await refreshQuestionnaireStatus();
-          toast.success('¡Tu plan está listo! Preparando tu dashboard...');
+          console.log('✅ Questionnaire status refreshed');
         }
-        // Esperar un momento para que el estado se actualice
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        onNavigate('/dashboard');
+
+        toast.success('¡Tu plan está listo! Preparando tu dashboard...');
+
+        // Sistema de auto-verificación y corrección automática
+        setTimeout(async () => {
+          console.log('🔄 AUTO-VERIFY: Starting automatic verification...');
+
+          // Verificar el estado múltiples veces
+          for (let i = 0; i < 3; i++) {
+            if (refreshQuestionnaireStatus) {
+              await refreshQuestionnaireStatus();
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+
+            // Si el estado se actualizó correctamente, navegar inmediatamente
+            if ((window as any).hasCompletedQuestionnaire) {
+              console.log('✅ AUTO-VERIFY: Status updated successfully');
+              onNavigate('/dashboard');
+              return;
+            }
+          }
+
+          // Si después de 3 intentos no se actualizó, proceder de todas formas
+          console.log('⚠️ AUTO-VERIFY: Status not updated after retries, proceeding anyway...');
+          onNavigate('/dashboard');
+        }, 1500);
       } else {
         const error = await response.text();
+        console.error('❌ Error submitting questionnaire:', error);
         toast.error('Error al generar el plan: ' + error);
       }
     } catch (error) {
@@ -444,7 +531,7 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
                 <Checkbox
                   id={allergy}
                   checked={answers.restrictions.allergies.includes(allergy)}
-                  onCheckedChange={(checked) => updateArrayAnswer('restrictions', 'allergies', allergy, checked)}
+                  onCheckedChange={(checked) => updateArrayAnswer('restrictions', 'allergies', allergy, !!checked)}
                 />
                 <label htmlFor={allergy} className="text-sm font-medium text-gray-700 cursor-pointer">
                   {allergy}
@@ -467,7 +554,7 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
                 <Checkbox
                   id={intolerance}
                   checked={answers.restrictions.intolerances.includes(intolerance)}
-                  onCheckedChange={(checked) => updateArrayAnswer('restrictions', 'intolerances', intolerance, checked)}
+                  onCheckedChange={(checked) => updateArrayAnswer('restrictions', 'intolerances', intolerance, !!checked)}
                 />
                 <label htmlFor={intolerance} className="text-sm font-medium text-gray-700 cursor-pointer">
                   {intolerance}
@@ -796,6 +883,22 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
             </div>
           </CardHeader>
           <CardContent>
+            {/* Indicador de validación */}
+            {(() => {
+              const stepErrors = validateStep(currentStep);
+              return stepErrors.length > 0 ? (
+                <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <AlertTriangle className="w-5 h-5 text-amber-600" />
+                    <span className="font-medium text-amber-800">Campos requeridos faltantes:</span>
+                  </div>
+                  <div className="text-sm text-amber-700">
+                    {stepErrors.join(', ')}
+                  </div>
+                </div>
+              ) : null;
+            })()}
+
             {renderStep()}
           </CardContent>
         </Card>

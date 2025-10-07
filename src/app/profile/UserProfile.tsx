@@ -233,14 +233,25 @@ export function UserProfile({ user, onNavigate }: UserProfileProps) {
       const userId = session.user.id;
       console.log('🗑️ Eliminando cuenta para usuario:', userId);
   
-      // 2️⃣ ELIMINAR DATOS DE SUPABASE
+      // 2️⃣ ELIMINAR DATOS DEL SERVIDOR
       try {
-        await supabase.from('user_settings').delete().eq('user_id', userId);
-        await supabase.from('nutrition_plans').delete().eq('user_id', userId);
-        await supabase.from('user_profiles').delete().eq('user_id', userId);
-        console.log('✅ Datos de Supabase eliminados');
+        const response = await fetchEdge('delete-account', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+
+        if (response.ok) {
+          console.log('✅ Datos del servidor eliminados correctamente');
+        } else {
+          console.warn('⚠️ Error eliminando datos del servidor:', response.status, await response.text());
+          // Continuar con la eliminación local incluso si falla el servidor
+        }
       } catch (supabaseError) {
-        console.warn('Error eliminando datos de Supabase:', supabaseError);
+        console.warn('⚠️ Error eliminando datos del servidor:', supabaseError);
+        // Continuar con la eliminación local
       }
   
       // 3️⃣ LIMPIAR LOCALSTORAGE COMPLETO

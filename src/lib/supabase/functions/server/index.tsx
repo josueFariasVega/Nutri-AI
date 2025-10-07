@@ -27,6 +27,15 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || ''
 );
 
+// Activity level multipliers for TDEE calculation
+const activityMultipliers = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  veryactive: 1.9
+};
+
 // Helper function to verify user authentication
 async function verifyUser(c: any): Promise<any | null> {
   try {
@@ -122,12 +131,49 @@ app.post("/make-server-b9678739/signup", async (c) => {
   }
 });
 
+// Check if user is marked as deleted
+app.get("/make-server-b9678739/deleted-user/:userId", async (c) => {
+  try {
+    const userId = c.req.param('userId');
+    if (!userId) {
+      return c.text('User ID required', 400);
+    }
+
+    const deletedMarker = await kv.get(`deleted_user_${userId}`);
+
+    if (deletedMarker) {
+      console.log('🚨 Deleted user check: User is marked as deleted');
+      return c.json({
+        isDeleted: true,
+        deletedAt: deletedMarker.deleted_at,
+        reason: deletedMarker.reason
+      });
+    }
+
+    return c.json({ isDeleted: false });
+  } catch (error) {
+    console.error('Deleted user check error:', error);
+    return c.json({ isDeleted: false });
+  }
+});
+
 // Check user status (questionnaire completion)
 app.get("/make-server-b9678739/user-status", async (c) => {
   try {
     const user = await verifyUser(c);
     if (!user) {
       return c.text('Unauthorized', 401);
+    }
+
+    // Check if user is marked as deleted first
+    const deletedMarker = await kv.get(`deleted_user_${user.id}`);
+    if (deletedMarker) {
+      console.log('🚨 User status check: User is marked as deleted');
+      return c.json({
+        hasCompletedQuestionnaire: false,
+        isDeleted: true,
+        message: 'User account has been deleted'
+      });
     }
 
     const profile = await kv.get(`user_profile_${user.id}`);
@@ -157,12 +203,67 @@ app.post("/make-server-b9678739/questionnaire", async (c) => {
       completed_at: new Date().toISOString()
     });
 
-    // Update user profile to mark questionnaire as completed
-    const profile = await kv.get(`user_profile_${user.id}`);
-    if (profile) {
-      profile.has_completed_questionnaire = true;
-      await kv.set(`user_profile_${user.id}`, profile);
-    }
+     // Update user profile to mark questionnaire as completed
+     console.log('🔄 Starting questionnaire completion process for user:', user.id);
+
+     // Get current profile with retry mechanism
+     let profile = await kv.get(`user_profile_${user.id}`);
+     console.log('📋 Current profile before update:', profile);
+
+     if (profile) {
+       console.log('📝 Updating existing profile...');
+       profile.has_completed_questionnaire = true;
+       profile.questionnaire_completed_at = new Date().toISOString();
+       profile.updated_at = new Date().toISOString();
+
+       // Save with retry mechanism
+       let saveAttempts = 0;
+       const maxAttempts = 3;
+
+       while (saveAttempts < maxAttempts) {
+         try {
+           await kv.set(`user_profile_${user.id}`, profile);
+           console.log('✅ Profile updated with has_completed_questionnaire: true');
+
+           // Verify the save immediately
+           const verificationProfile = await kv.get(`user_profile_${user.id}`);
+           if (verificationProfile?.has_completed_questionnaire) {
+             console.log('✅ Verification successful - Profile saved correctly');
+             break;
+           } else {
+             throw new Error('Verification failed - profile not saved correctly');
+           }
+         } catch (error) {
+           saveAttempts++;
+           console.error(`❌ Save attempt ${saveAttempts} failed:`, error);
+           if (saveAttempts >= maxAttempts) {
+             throw new Error(`Failed to save profile after ${maxAttempts} attempts`);
+           }
+           // Wait before retry
+           await new Promise(resolve => setTimeout(resolve, 1000));
+         }
+       }
+     } else {
+       console.log('⚠️ No existing profile found, creating new one');
+       const newProfile = {
+         id: user.id,
+         email: user.email,
+         has_completed_questionnaire: true,
+         questionnaire_completed_at: new Date().toISOString(),
+         created_at: new Date().toISOString(),
+         updated_at: new Date().toISOString()
+       };
+
+       // Save new profile with verification
+       await kv.set(`user_profile_${user.id}`, newProfile);
+       console.log('✅ New profile created with has_completed_questionnaire: true');
+
+       // Verify new profile was saved
+       const verificationProfile = await kv.get(`user_profile_${user.id}`);
+       if (!verificationProfile?.has_completed_questionnaire) {
+         throw new Error('Failed to save new profile correctly');
+       }
+     }
 
     // Generate nutrition plan
     const nutritionPlan = await generateNutritionPlan(answers);
@@ -191,6 +292,13 @@ app.get("/make-server-b9678739/nutrition-plan", async (c) => {
     const user = await verifyUser(c);
     if (!user) {
       return c.text('Unauthorized', 401);
+    }
+
+    // Check if user is marked as deleted
+    const deletedMarker = await kv.get(`deleted_user_${user.id}`);
+    if (deletedMarker) {
+      console.log('🚨 Nutrition plan request: User is marked as deleted');
+      return c.text('User account has been deleted', 410); // 410 Gone
     }
 
     const plan = await kv.get(`nutrition_plan_${user.id}`);
@@ -383,6 +491,7 @@ app.get("/make-server-b9678739/user-settings", async (c) => {
     return c.json({ settings: defaultSettings });
   }
 }
+
 // Delete user account and all associated data
 app.delete("/make-server-b9678739/delete-account", async (c) => {
   try {
@@ -390,30 +499,76 @@ app.delete("/make-server-b9678739/delete-account", async (c) => {
     if (!user) return c.text('Unauthorized', 401);
 
     const userId = user.id;
+    console.log('🗑️ Starting account deletion for user:', userId);
 
     // Get all user data keys and delete them
     const userKeys = await kv.getByPrefix(`user_`);
     const nutritionKeys = await kv.getByPrefix(`nutrition_plan_`);
     const questionnaireKeys = await kv.getByPrefix(`questionnaire_`);
     const metricKeys = await kv.getByPrefix(`metrics_${userId}_`);
+    const settingsKeys = await kv.getByPrefix(`user_settings_`);
+    const recipeCacheKeys = await kv.getByPrefix(`recipe_cache`);
 
     const keysToDelete = [
       ...userKeys.filter((key: string) => key.includes(userId)),
       ...nutritionKeys.filter((key: string) => key.includes(userId)),
       ...questionnaireKeys.filter((key: string) => key.includes(userId)),
-      ...metricKeys
+      ...metricKeys,
+      ...settingsKeys.filter((key: string) => key.includes(userId)),
+      ...recipeCacheKeys // Also clean recipe cache to prevent conflicts
     ];
+
+    console.log('🗑️ Keys to delete:', keysToDelete);
 
     if (keysToDelete.length > 0) {
       await kv.mdel(keysToDelete);
+      console.log('✅ Deleted', keysToDelete.length, 'keys from KV store');
     }
 
+    // Mark user as deleted in KV store instead of trying to delete from Auth
+    // This is more reliable and avoids permission issues
+    try {
+      console.log('📝 Marking user as deleted in KV store:', userId);
+      await kv.set(`deleted_user_${userId}`, {
+        user_id: userId,
+        deleted_at: new Date().toISOString(),
+        reason: 'User requested account deletion'
+      });
+      console.log('✅ User marked as deleted in KV store');
+    } catch (markError) {
+      console.error('⚠️ Could not mark user as deleted:', markError);
+    }
+
+    // Try to delete from Supabase Auth as well, but don't fail if it doesn't work
+    try {
+      console.log('🔐 Attempting to delete user from Supabase Auth:', userId);
+      const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);
+
+      if (deleteError) {
+        console.error('⚠️ Could not delete from Supabase Auth:', deleteError);
+
+        // Check if it's a "not found" error (user already deleted or doesn't exist)
+        if (deleteError.message?.includes('not found') || deleteError.message?.includes('User not found')) {
+          console.log('ℹ️ User not found in Auth - may have been already deleted or never existed');
+        } else {
+          console.error('❌ Auth deletion failed for a different reason:', deleteError);
+          console.log('ℹ️ This is not critical - user data has been cleaned from KV store');
+        }
+      } else {
+        console.log('✅ User successfully deleted from Supabase Auth');
+      }
+    } catch (authError) {
+      console.error('⚠️ Auth deletion exception (continuing):', authError);
+      console.log('ℹ️ This is not critical - user data has been cleaned from KV store');
+    }
+
+    console.log('✅ Account deletion completed for user:', userId);
     return c.json({ success: true, message: 'Account deleted successfully' });
   } catch (error) {
+    console.error('❌ Account deletion error:', error);
     return c.json({ success: false, message: error.message }, 500);
   }
 });
-);
 
 // Update daily metrics
 app.post("/make-server-b9678739/metrics", async (c) => {
@@ -462,6 +617,13 @@ app.get("/make-server-b9678739/user-profile", async (c) => {
     const user = await verifyUser(c);
     if (!user) {
       return c.text('Unauthorized', 401);
+    }
+
+    // Check if user is marked as deleted
+    const deletedMarker = await kv.get(`deleted_user_${user.id}`);
+    if (deletedMarker) {
+      console.log('🚨 User profile request: User is marked as deleted');
+      return c.text('User account has been deleted', 410); // 410 Gone
     }
 
     const profile = await kv.get(`user_profile_${user.id}`);
@@ -566,6 +728,7 @@ async function generateNutritionPlan(answers: {
     gender: 'male'| 'female';
     height: number;
     weight: number;
+    targetWeight?: number;
     activityLevel: 'sedentary' | 'light' | 'moderate' | 'active' | 'veryactive';
     goal: 'lose_weight' | 'gain_weight' | 'maintain';
   };

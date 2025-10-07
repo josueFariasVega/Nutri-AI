@@ -192,9 +192,9 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
         if (refreshQuestionnaireStatus) {
           await refreshQuestionnaireStatus();
           toast.success('¡Tu plan está listo! Preparando tu dashboard...');
-          // Esperar un momento para que el estado se actualice
-          await new Promise(resolve => setTimeout(resolve, 1000));
         }
+        // Esperar un momento para que el estado se actualice
+        await new Promise(resolve => setTimeout(resolve, 1000));
         onNavigate('/dashboard');
       } else {
         const error = await response.text();

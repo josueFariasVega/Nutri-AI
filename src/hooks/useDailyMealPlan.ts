@@ -396,7 +396,7 @@ export function useDailyMealPlan() {
     }
 
     // Media mañana
-    if (plan.meals.snacks?.foods?.length > 0) {
+    /*if (plan.meals.snacks?.foods?.length > 0) {
       const morningSnack = addRealVarietyToFoods([plan.meals.snacks.foods[0]], 'snacks')[0];
       if (morningSnack) {
         meals.push({
@@ -414,7 +414,7 @@ export function useDailyMealPlan() {
           completed: completedMeals.includes('morning-snack')
         });
       }
-    }
+    }*/
 
     // Almuerzo
     if (plan.meals.lunch?.foods?.length > 0) {
@@ -436,7 +436,7 @@ export function useDailyMealPlan() {
     }
 
     // Merienda
-    if (plan.meals.snacks?.foods?.length > 1) {
+    /*if (plan.meals.snacks?.foods?.length > 1) {
       const afternoonSnack = addRealVarietyToFoods([plan.meals.snacks.foods[1]], 'snacks')[0];
       if (afternoonSnack) {
         meals.push({
@@ -454,7 +454,7 @@ export function useDailyMealPlan() {
           completed: completedMeals.includes('afternoon-snack')
         });
       }
-    }
+    }*/
 
     // Cena
     if (plan.meals.dinner?.foods?.length > 0) {

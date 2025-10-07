@@ -353,7 +353,7 @@ export function Settings({ user, onNavigate }: SettingsProps) {
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => onNavigate('/dashboard')}
+              onClick={() => {window.location.hash = '/dashboard';}}
               className="p-2 hover:bg-green-100 rounded-xl"
             >
               <ArrowLeft className="w-5 h-5" />

@@ -289,7 +289,12 @@ export function useDailyMealPlan() {
   }, [getHistoricalData]);
 
   const getCurrentDate = (): string => {
-    return new Date().toISOString().split('T')[0];
+    // ✅ SOLUCIÓN ROBUSTA: Usar fecha local sin problemas de zona horaria
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const generateItemId = (mealType: string, itemName: string, index: number): string => {
@@ -663,6 +668,7 @@ const checkAndResetDailyPlan = useCallback(async (): Promise<void> => {
       localStorage.removeItem(DAILY_PLAN_KEY);
       
       // 3. 🆕 GENERAR NUEVO PLAN PARA HOY
+      localStorage.removeItem('recipe_cache');
       await generateDailyPlan();
       
       logger.log(`✅ Reset diario completado: ${planData.date} → ${currentDate}`);

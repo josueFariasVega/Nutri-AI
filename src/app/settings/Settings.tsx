@@ -246,10 +246,19 @@ export function Settings({ user, onNavigate }: SettingsProps) {
   
       // 2️⃣ ELIMINAR DATOS DE SUPABASE
       try {
-        await supabase.from('user_settings').delete().eq('user_id', userId);
-        await supabase.from('nutrition_plans').delete().eq('user_id', userId);
-        await supabase.from('user_profiles').delete().eq('user_id', userId);
-        console.log('✅ Datos de Supabase eliminados');
+        const response = await fetchEdge('delete-account', {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          }
+        });
+      
+        if (response.ok) {
+          console.log('✅ Datos de Supabase eliminados');
+        } else {
+          console.warn('Error eliminando datos de Supabase:', response.status);
+        }
       } catch (supabaseError) {
         console.warn('Error eliminando datos de Supabase:', supabaseError);
       }

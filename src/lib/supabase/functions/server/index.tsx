@@ -382,7 +382,38 @@ app.get("/make-server-b9678739/user-settings", async (c) => {
     
     return c.json({ settings: defaultSettings });
   }
+}
+// Delete user account and all associated data
+app.delete("/make-server-b9678739/delete-account", async (c) => {
+  try {
+    const user = await verifyUser(c);
+    if (!user) return c.text('Unauthorized', 401);
+
+    const userId = user.id;
+
+    // Get all user data keys and delete them
+    const userKeys = await kv.getByPrefix(`user_`);
+    const nutritionKeys = await kv.getByPrefix(`nutrition_plan_`);
+    const questionnaireKeys = await kv.getByPrefix(`questionnaire_`);
+    const metricKeys = await kv.getByPrefix(`metrics_${userId}_`);
+
+    const keysToDelete = [
+      ...userKeys.filter((key: string) => key.includes(userId)),
+      ...nutritionKeys.filter((key: string) => key.includes(userId)),
+      ...questionnaireKeys.filter((key: string) => key.includes(userId)),
+      ...metricKeys
+    ];
+
+    if (keysToDelete.length > 0) {
+      await kv.mdel(keysToDelete);
+    }
+
+    return c.json({ success: true, message: 'Account deleted successfully' });
+  } catch (error) {
+    return c.json({ success: false, message: error.message }, 500);
+  }
 });
+);
 
 // Update daily metrics
 app.post("/make-server-b9678739/metrics", async (c) => {

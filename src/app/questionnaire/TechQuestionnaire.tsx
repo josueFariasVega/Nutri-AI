@@ -188,9 +188,12 @@ export function TechQuestionnaire({ user, onNavigate, refreshQuestionnaireStatus
 
       if (response.ok) {
         const result = await response.json();
-        toast.success('¡Plan nutricional IA generado exitosamente!');
+        //toast.success('¡Plan nutricional IA generado exitosamente!');
         if (refreshQuestionnaireStatus) {
           await refreshQuestionnaireStatus();
+          toast.success('¡Tu plan está listo! Preparando tu dashboard...');
+          // Esperar un momento para que el estado se actualice
+          await new Promise(resolve => setTimeout(resolve, 1000));
         }
         onNavigate('/dashboard');
       } else {

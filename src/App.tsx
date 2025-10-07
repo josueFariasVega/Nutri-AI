@@ -75,6 +75,30 @@ function AppRouter() {
     toast.success('Sesión cerrada exitosamente');
   };
 
+  const refreshQuestionnaireStatus = async () => {
+    if (!user || !isAuthenticated) return;
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
+      const response = await fetchEdge('user-status', {
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const { hasCompletedQuestionnaire } = await response.json();
+        setHasCompletedQuestionnaire(hasCompletedQuestionnaire);
+        logger.log('Questionnaire status updated:', hasCompletedQuestionnaire);
+      }
+    } catch (error) {
+      logger.error('Error refreshing questionnaire status:', error);
+    }
+  };
+
   const checkUserStatusAndNavigate = async (targetRoute: string) => {
     if (!user) return;
     
@@ -208,7 +232,11 @@ function AppRouter() {
         <AuthPage onNavigate={handleNavigate} />
       )}
       {matchRoute(currentRoute, '/questionnaire') && user && (
-        <TechQuestionnaire user={user} onNavigate={handleNavigate} />
+        <TechQuestionnaire 
+        user={user} 
+        onNavigate={handleNavigate} 
+        refreshQuestionnaireStatus={refreshQuestionnaireStatus}
+        />
       )}
       {matchRoute(currentRoute, '/dashboard') && user && (
         <TechDashboard user={user} onNavigate={handleNavigate} onSignOut={handleSignOut} />
